@@ -36,7 +36,6 @@ def main():
     print "Listening for London tweets..."
     ## Co-ords
     london = [-0.4958, 51.2825, 0.2211, 51.6828]
-    sf = [-122.75,36.8,-121.75,37.8]
     try:
         london_stream.filter(locations=london)
     except KeyboardInterrupt:
