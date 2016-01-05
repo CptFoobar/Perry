@@ -84,7 +84,7 @@ def processTweet(tweet):
     if len(tweet.split()) < 4 or len(minimizedTweet(tweet).split()) < 3: goodTweet = False
     else: goodTweet = True
 
-    return (goodTweet, tweetTemplate(' '.join(tweet.split())))
+    return goodTweet, tweetTemplate(' '.join(tweet.split()))
 
 # Return tweet after stripping URLs, REFs and TAGs
 def minimizedTweet(tweet):

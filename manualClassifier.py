@@ -9,7 +9,7 @@ def main():
     outFile = open("../data/london_classified_set.tds", 'a')
     count = 0
     total = 0
-    previousCount = 301 + 501 # sarcasm: 225 + 257 + 386
+    previousCount = 225 + 257 + 386 + 451 + 751 # sarcasm: 225 + 257 + 386 + 301
     for i in range(previousCount-1, len(tweetSet)):
         tweet = tweetSet[i]
         total += 1

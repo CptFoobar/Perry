@@ -4,6 +4,7 @@ import random
 import re
 import string
 import itertools
+import sys
 from math import log
 import nltk
 from nltk.corpus import stopwords
@@ -14,6 +15,10 @@ from nltk.corpus import words
 vectorizer = None
 testSet = []
 trainSet = []
+
+def init_all(mf):
+    init(mf)
+    getTrainingSet()
 
 def init(mf):
     global vectorizer
@@ -78,7 +83,7 @@ def prepareDatasets():
     random.shuffle(combined_set)
 
     # Write to files
-    splitPoint = int(len(combined_set)*0.75)
+    splitPoint = int(len(combined_set)*0.775)
     trainFile = open("../data/training_set.tds", 'w')
     for tweet, label in combined_set[:splitPoint]:
         pickle.dump(LabelledTemplate(tweet, label), trainFile)
@@ -95,9 +100,8 @@ def getTrainingDataset():
     allBigrams = list(itertools.chain(*allBigrams))
     bigramFeaturesWgt = getWeightedFeatures(allBigrams, labelledBigrams)
     bigramFeaturesWgt = sorted(set(bigramFeaturesWgt), key = lambda feature: feature[1], reverse = True)
-    # threshWgt = (min([weight for bigram, weight in bigramFeaturesWgt]) + \
-    #             max([weight for bigram, weight in bigramFeaturesWgt]))
-    # avgWgt = 0
+    threshWgt = (min([weight for bigram, weight in bigramFeaturesWgt]) + \
+             max([weight for bigram, weight in bigramFeaturesWgt]))
     threshWgt = max([weight for bigram, weight in bigramFeaturesWgt])
     bigramFeatures = [bigram for bigram, weight in bigramFeaturesWgt if weight >= threshWgt]
     return bigramFeatures, labelledBigrams
@@ -122,9 +126,10 @@ def cleanSet(tweets):
     count = 0
     for tweet, label in tweets:
         count += 1
-        #if count % 100 == 0:
-            #print "Cleaned %d tweets" % count
         cleanedSet.append((cleanTweet(tweet, wrds), label))
+        sys.stdout.write("\rCleaning tweets: %d%%" % int(count * 100 / len(tweets)))
+        sys.stdout.flush()
+    print
     return cleanedSet
 
 def cleanTweet(tweet, wrds):
@@ -195,3 +200,10 @@ def getTestSet():
         ts = testSet
     tweetSet, labels = [list(item) for item in zip(*ts)]
     return vectorizer.transform(tweetSet), labels
+
+
+def getVectorizer():
+    return vectorizer
+
+def vectorizeOne(tweet):
+    return vectorizer.transform([tweet])[0]
