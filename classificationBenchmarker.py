@@ -7,9 +7,10 @@ import sklearn
 import sys
 import time
 from functools import partial
+from nltk.metrics.scores import f_measure
 from sklearn.cluster import KMeans
 from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics import accuracy_score
+from sklearn.metrics import accuracy_score, f1_score
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
@@ -54,7 +55,7 @@ def main():
             results.append(mClassifyKNN(training_set, test_set, i))
 
         results.append(classifyDT_sklearn((train_features, train_labels), (test_features, test_labels), 8))
-        results.append(classifyKMC_sklearn((train_features, train_labels), (test_features, test_labels)))
+        #results.append(classifyKMC_sklearn((train_features, train_labels), (test_features, test_labels)))
         results.append(classifySVM_sklearn((train_features, train_labels), (test_features, test_labels)))
 
     resultsFile = open("results.json", 'w')
@@ -88,8 +89,10 @@ def mClassifyNB(training_set, test_set):
     # print "Training complete."
     tr_acc = nltk.classify.accuracy(classifier, training_set)
     te_acc = nltk.classify.accuracy(classifier, test_set)
-
-    return generateJson("Naive Bayes - manual IDF", tr_acc, te_acc)
+    results = classifier.classify_many([fs for (fs, lbl) in test_set])
+    reference = [lbl for (fs, lbl) in test_set]
+    f1_score = f_measure(set(reference), set(results))
+    return generateJson("Naive Bayes - manual IDF", tr_acc, te_acc, f1_score)
 
 
 # k Nearest Neighbors - sklearn implementation
@@ -103,8 +106,8 @@ def classifyKNN_sklearn(training_set, test_set, n):
     # print "Training complete."
     tr_acc = accuracy_score(classifier.predict(train_features), train_labels)
     te_acc = accuracy_score(classifier.predict(test_features.todense()), test_labels)
-
-    return generateJson("k-NN, k = %d" % n, tr_acc, te_acc)
+    f_score = f1_score(test_labels, classifier.predict(test_features.todense()), average='micro')
+    return generateJson("k-NN, k = %d" % n, tr_acc, te_acc, f_score)
 
 
 # Naive Bayes classifier - sklearn implementation
@@ -118,8 +121,9 @@ def classifyNB_sklearn(training_set, test_set):
     # print "Training complete."
     tr_acc = accuracy_score(classifier.predict(train_features), train_labels)
     te_acc = accuracy_score(classifier.predict(test_features.todense()), test_labels)
+    f_score = f1_score(test_labels, classifier.predict(test_features.todense()), average='micro')
 
-    return generateJson("Naive Bayes (sklearn)", tr_acc, te_acc)
+    return generateJson("Naive Bayes (sklearn)", tr_acc, te_acc, f_score)
 
 
 def classifySVM_sklearn(training_set, test_set):
@@ -132,8 +136,9 @@ def classifySVM_sklearn(training_set, test_set):
     # print "Training complete."
     tr_acc = accuracy_score(classifier.predict(train_features), train_labels)
     te_acc = accuracy_score(classifier.predict(test_features.todense()), test_labels)
+    f_score = f1_score(test_labels, classifier.predict(test_features.todense()), average='micro')
 
-    return generateJson("SVM (sklearn)", tr_acc, te_acc)
+    return generateJson("SVM (sklearn)", tr_acc, te_acc, f_score)
 
 
 # Decision Trees - sklearn implementation
@@ -148,8 +153,9 @@ def classifyDT_sklearn(training_set, test_set, i):
     #print "Training complete."
     tr_acc = accuracy_score(classifier.predict(train_features), train_labels)
     te_acc = accuracy_score(classifier.predict(test_features), test_labels)
+    f_score = f1_score(test_labels, classifier.predict(test_features.todense()), average='micro')
 
-    return generateJson("Decision Trees (sklearn)", tr_acc, te_acc)
+    return generateJson("Decision Trees (sklearn)", tr_acc, te_acc, f_score)
 
 
 # K Means Clustering classifier - sklearn implementation
@@ -163,8 +169,9 @@ def classifyKMC_sklearn(training_set, test_set):
     # print "Training complete."
     tr_acc = calcAcc(train_features, train_labels, classifier)
     te_acc = calcAcc(test_features, test_labels, classifier)
+    f_score = f1_score(test_labels, classifier.predict(test_features.todense()), average='micro')
 
-    return generateJson("K Means Clustering (sklearn)", tr_acc, te_acc)
+    return generateJson("K Means Clustering (sklearn)", tr_acc, te_acc, f_score)
 
 
 # Naive Bayes Classifier - TextBlob implementation
@@ -197,8 +204,9 @@ def mClassifyNB_sklearn(training_set, test_set):
     # print "Training complete."
     tr_acc = accuracy_score(classifier.predict(train_features), train_labels)
     te_acc = accuracy_score(classifier.predict(test_features), test_labels)
+    f_score = f1_score(test_labels, classifier.predict(test_features), average='micro')
 
-    return generateJson("Naive Bayes (sklearn) - manual IDF", tr_acc, te_acc)
+    return generateJson("Naive Bayes (sklearn) - manual IDF", tr_acc, te_acc, f_score)
 
 
 # k Nearest Neighbors - using manual IDF
@@ -213,8 +221,9 @@ def mClassifyKNN(training_set, test_set, n):
     # print "Training complete."
     tr_acc = accuracy_score(classifier.predict(train_features), train_labels)
     te_acc = accuracy_score(classifier.predict(test_features), test_labels)
+    f_score = f1_score(test_labels, classifier.predict(test_features), average='micro')
 
-    return generateJson("k-NN, k = %d - manual IDF" % n, tr_acc, te_acc)
+    return generateJson("k-NN, k = %d - manual IDF" % n, tr_acc, te_acc, f_score)
 
 
 # Extract features from a bigram
@@ -264,11 +273,12 @@ def calcAcc(features, labels, classifier):
     return float(j / len(labels))
 
 
-def generateJson(algorithm, train_acc, test_acc):
+def generateJson(algorithm, train_acc, test_acc, f_score):
     return {
         'Algorithm': algorithm,
         'Training Set accuracy' : "%.2f%%" % (train_acc * 100),
-        'Test Set accuracy' : "%.2f%%" % (test_acc * 100)
+        'Test Set accuracy' : "%.2f%%" % (test_acc * 100),
+        'F - Score' : "%.2f%%" % (f_score * 100)
     }
 
 if __name__ == "__main__":

@@ -1,5 +1,9 @@
 *.pyc
+
 # Ignore auth file
 twitterAuth.py
 # Including dupes, if any
 */twitterAuth.py
+
+# Remove results.json, it's meta.
+results.json
