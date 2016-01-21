@@ -175,9 +175,12 @@ def filterStopWords(tokenized):
 
 
 def getBigrams(tweet):
-    cleanTweet(tweet)
-    tweetBigrams = [bigram for bigram in nltk.bigrams(nltk.word_tokenize(tweet))]
+    tweet = cleanTweet(tweet, words.words())
+    tokens = nltk.word_tokenize(tweet)
+    filteredTokens = [token for token in tokens if token not in stopwords.words('english')]
+    tweetBigrams = [bigram for bigram in nltk.bigrams(filteredTokens)]
     return tweetBigrams
+
 
 def getTrainingSet():
     global trainSet

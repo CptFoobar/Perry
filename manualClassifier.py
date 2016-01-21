@@ -5,11 +5,11 @@ from tweetTemplate import *
 
 def main():
 
-    tweetSet = datasetRetriever.getTweetDataset("../data/london_processed_dataset.tds")
-    outFile = open("../data/london_classified_set.tds", 'a')
+    tweetSet = datasetRetriever.getTweetDataset("../data/sarcasm_processed_dataset.tds")
+    outFile = open("../data/sarcasm_classified_set.tds", 'a')
     count = 0
     total = 0
-    previousCount = 225 + 257 + 386 + 451 + 751 # sarcasm: 225 + 257 + 386 + 301
+    previousCount =  0  # london: 2472 # sarcasm: 1199
     for i in range(previousCount-1, len(tweetSet)):
         tweet = tweetSet[i]
         total += 1

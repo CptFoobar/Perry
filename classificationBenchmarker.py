@@ -8,7 +8,6 @@ import sys
 import time
 from functools import partial
 from sklearn.cluster import KMeans
-from sklearn.feature_extraction import FeatureHasher
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics import accuracy_score
 from sklearn.naive_bayes import GaussianNB
@@ -38,14 +37,16 @@ def main():
         training_set = nltk.classify.apply_features(featureExtractor, labelledBigrams)
         labelledTest = dr.getTestDataset()
         test_set = nltk.classify.apply_features(featureExtractor, labelledTest)
+        print "training_set: {0}, test_set: {1}".format(str(len(training_set)), str(len(test_set)))
 
-        classifySVM_sklearn((train_features, train_labels), (test_features, test_labels))
         # Best results are obtained for NB (manual IDF) and DTrees
 
         for i in range(1,4):
-            results.append(classifyKNN_sklearn((train_features, train_labels), (test_features, test_labels), i))
+            res = classifyKNN_sklearn((train_features, train_labels), (test_features, test_labels), i)
+            results.append(res)
 
-        results.append(classifyNB_sklearn((train_features, train_labels), (test_features, test_labels)))
+        res = classifyNB_sklearn((train_features, train_labels), (test_features, test_labels))
+        results.append(res)
 
         results.append(mClassifyNB(training_set, test_set))
         results.append(mClassifyNB_sklearn(training_set, test_set))
@@ -54,11 +55,17 @@ def main():
 
         results.append(classifyDT_sklearn((train_features, train_labels), (test_features, test_labels), 8))
         results.append(classifyKMC_sklearn((train_features, train_labels), (test_features, test_labels)))
+        results.append(classifySVM_sklearn((train_features, train_labels), (test_features, test_labels)))
 
     resultsFile = open("results.json", 'w')
     json.dump(list(results), resultsFile)
     resultsFile.close()
 
+    ld_train = dr.getLabelledDataset("../data/training_set.tds")
+    ld_test = dr.getLabelledDataset("../data/test_set.tds")
+    # Text blob is know to outperform current implementation, leave it out for now
+    #classifyNB_tb(ld_train, ld_test)
+    #classifyDT_tb(ld_train, ld_test)
     htmlTemplateBegin = "<!DOCTYPE html><html><head><title>Sarcastic results</title></head><body><h2>Sarcasm Detection Results</h2>"
     htmlTemplateEnd = "</body></html>"
     resHtml = open("Benchmark.html", 'w')
@@ -66,10 +73,6 @@ def main():
     resHtml.write(json2html.convert(json={'results': results}))
     resHtml.write(htmlTemplateEnd)
     resHtml.close()
-
-    # Text blob is know to outperform current implementation, leave it out for now
-    # classifyNB_tb(ld_train, ld_test)
-    # classifyDT_tb(ld_train, ld_test)
 
     print "Execution complete."
     print "Total time of execution: {0} mins.".format(str(int((time.time() - t0) / 60)))
@@ -86,7 +89,7 @@ def mClassifyNB(training_set, test_set):
     tr_acc = nltk.classify.accuracy(classifier, training_set)
     te_acc = nltk.classify.accuracy(classifier, test_set)
 
-    generateJson("Naive Bayes - manual IDF", tr_acc, te_acc)
+    return generateJson("Naive Bayes - manual IDF", tr_acc, te_acc)
 
 
 # k Nearest Neighbors - sklearn implementation
@@ -101,7 +104,7 @@ def classifyKNN_sklearn(training_set, test_set, n):
     tr_acc = accuracy_score(classifier.predict(train_features), train_labels)
     te_acc = accuracy_score(classifier.predict(test_features.todense()), test_labels)
 
-    generateJson("k-NN, k = %d" % n, tr_acc, te_acc)
+    return generateJson("k-NN, k = %d" % n, tr_acc, te_acc)
 
 
 # Naive Bayes classifier - sklearn implementation
@@ -116,7 +119,7 @@ def classifyNB_sklearn(training_set, test_set):
     tr_acc = accuracy_score(classifier.predict(train_features), train_labels)
     te_acc = accuracy_score(classifier.predict(test_features.todense()), test_labels)
 
-    generateJson("Naive Bayes (sklearn)", tr_acc, te_acc)
+    return generateJson("Naive Bayes (sklearn)", tr_acc, te_acc)
 
 
 def classifySVM_sklearn(training_set, test_set):
@@ -264,8 +267,8 @@ def calcAcc(features, labels, classifier):
 def generateJson(algorithm, train_acc, test_acc):
     return {
         'Algorithm': algorithm,
-        'Training Set accuracy' : "%.2f" % (train_acc * 100),
-        'Test Set accuracy' : "%.2f" % (test_acc * 100)
+        'Training Set accuracy' : "%.2f%%" % (train_acc * 100),
+        'Test Set accuracy' : "%.2f%%" % (test_acc * 100)
     }
 
 if __name__ == "__main__":
