@@ -9,6 +9,7 @@ from math import log
 import nltk
 from nltk.corpus import stopwords
 from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn import preprocessing
 from nltk.corpus import words
 
 # TF-IDF Vectorizer
@@ -68,7 +69,7 @@ def getLabelledDataset(fileName):
     filein.close()
     return labelledSet
 
-def prepareDatasets():
+def prepareDatasets(splitFactor):
     # Get datasets
     print "Preparing datasets"
     sarcasm_set = getLabelledDataset("../data/sarcasm_classified_set.tds")
@@ -76,6 +77,7 @@ def prepareDatasets():
     combined_set = []
     for tweet, label in sarcasm_set + london_set:
         if len(label) == 1:
+            label = 1 if int(label) > 2 else 0
             combined_set.append((tweet, label))
 
     # Shuffle twice
@@ -83,7 +85,7 @@ def prepareDatasets():
     random.shuffle(combined_set)
 
     # Write to files
-    splitPoint = int(len(combined_set)*0.775)
+    splitPoint = int(len(combined_set)*splitFactor)
     trainFile = open("../data/training_set.tds", 'w')
     for tweet, label in combined_set[:splitPoint]:
         pickle.dump(LabelledTemplate(tweet, label), trainFile)
